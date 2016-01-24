@@ -1,0 +1,350 @@
+---
+title: "COPUS Analysis for publication"
+author: "Tony Hui"
+output: 
+  html_document: 
+    keep_md: yes
+    self_contained: yes
+    toc: yes
+---
+
+# Processing the data
+
+```{r}
+require(knitr)
+opts_chunk$set(echo=F)
+```
+
+```{r warning=FALSE, error=FALSE}
+suppressPackageStartupMessages(require(ggplot2))
+suppressPackageStartupMessages(require(dplyr))
+suppressPackageStartupMessages(require(stringr))
+suppressPackageStartupMessages(require(tidyr))
+suppressPackageStartupMessages(require(data.table))
+suppressPackageStartupMessages(require(pheatmap))
+```
+
+```{r}
+path_to_files <- "Data/ObservationFiles/"
+files <- dir(path = path_to_files)
+
+read_files <- function(x) {
+  filename <- x
+  file_metadata_info <- str_split_fixed(gsub(".csv", "", filename), pattern = "-", n = 4) %>% 
+    c() %>% 
+    str_replace(pattern = "Course|Instr|Semester|Observation", replacement = "")
+  
+  file <- read.csv(paste0(path_to_files, x)) %>% tbl_df()
+  colnames(file)[1] <- "time" # first column is time, but it is unlabeled
+  file <- file[1:length(levels(file$time))-1,]
+  file$time <- 1:nrow(file) *2
+  if (ncol(file) > 26) {
+    file <- file %>% select(-starts_with("X")) # some columns have a shit-tonne of extra columns, presumably due to excel export error...
+  }
+  file$course <- file_metadata_info[1]
+  file$instructor <- file_metadata_info[2]
+  file$semester <- file_metadata_info[3]
+  file$observation <- file_metadata_info[4]
+  file$year <- substr(file$course, start = 1, stop = 1)
+  return(file)
+}
+
+all_files <- lapply(files, read_files)
+names(all_files) <- files
+```
+
+## Sanity check the data
+
+```{r}
+lapply(all_files, ncol) %>% unlist %>% unique() %>% paste("Number of Columns for all files:", .)
+```
+
+Remove classes that are shorter than 43 minutes and longer than 51 minutes
+
+```{r class_lengths}
+(tmp <- lapply(all_files, nrow) %>% unlist %>% plyr::count()) %>% kable()
+
+ggplot(lapply(all_files, nrow) %>% unlist %>% data.frame, aes(.*2)) +
+  geom_bar() +
+  geom_vline(xintercept = c(21.5,25.5)*2) +
+  xlab("Length of class")
+```
+
+```{r eval=FALSE}
+(outliers_column <- all_files[lapply(all_files, ncol) == 31] %>% names)
+read.csv(paste0(path_to_files, outliers_column[1])) %>% colnames
+
+(outliers_row <- all_files[!lapply(all_files, nrow) %in% c(22,23,24,25)] %>% names)
+read.csv(paste0(path_to_files, outliers_row[1])) %>% View
+```
+
+## Combine data from all classes/observations into one file
+
+```{r}
+all_files_clean <- rbindlist(all_files) %>% as.data.frame() %>% tbl_df()
+all_files_clean[is.na(all_files_clean)] <- 0
+```
+
+### Filter out unwanted variables
+
+Notes from Megan: The 8 variables used in the Lund et al paper (and their short form codes from Lund’s Table 4) are:
+
+* Student-AnsweringQuestion (AnQ-S)
+* Student-AskingQuestion (SQ)
+* Instructor-AskingClickerQuestion (CQ)
+* Instructor-GivingFeedback (FUp)
+* Instructor-Lecturing (Lec)
+* Instructor-WritingOnBoard (RtW)
+* Instructor-MovingThroughGroup (MG)
+* Students-GroupWork (GW) 
+    + this is an amalgam of the three student groupwork codes, which we need to process.  It is considered checked off (“1”) if any of the three student groupwork raw codes occurs in the given interval. (Students-ClickerQuestionInGroups. Students-Worksheet, Students-OtherGroupwork)
+
+```{r}
+class_data_cleaned <- all_files_clean %>%
+  select(time, course, instructor, semester, observation, year, Student.AnsweringQuestion, Student.AskingQuestion, Instructor.AskingClickerQuestion, Instructor.GivingFeedback, Instructor.Lecturing, Instructor.WritingOnBoard, Instructor.MovingThroughGroup)
+
+class_data_cleaned$Students.GroupWork <- ifelse(with(all_files_clean, Students.ClickerQuestionInGroups + Students.Worksheet + Students.OtherGroupwork) > 0, 1, 0)
+
+class_data_cleaned %>% head() %>% kable(format = "markdown")
+```
+
+## Process the class performance data
+
+```{r}
+class_perform_all <- read.csv("Data/Student Performance and Class information.csv") %>% tbl_df() %>% separate(ClassSection, into = c("course", "instructor", "semester"), sep = "-")
+
+class_perform_all$course <- str_replace(class_perform_all$course, pattern = "Course", replacement = "")
+class_perform_all$instructor <- str_replace(class_perform_all$instructor, pattern = "Instr", replacement = "")
+class_perform_all$semester <- str_replace(class_perform_all$semester, pattern = "Semester", replacement = "")
+
+class_perform_all %>% head() %>% kable(format = "markdown")
+```
+
+### Merge performance data with the classes data
+
+```{r}
+class_perform <- class_perform_all %>% select(course, instructor, semester, EffectSize.StudentPerformance)
+
+all_files_clean_marks <- full_join(class_data_cleaned, class_perform)
+
+write.csv(x = all_files_clean_marks, file = "all_observations_cleaned.csv", quote = F, row.names = F)
+```
+
+# Basic exploratory analysis
+
+## Fractional amount of time spent on each category overall per class
+
+```{r frac_time_per_class}
+gathered_values <- class_data_cleaned %>% 
+  tbl_df() %>%
+  gather(key = measure, value = value, -(course:year), -time, na.rm = T)
+
+gathered_values %>% 
+  group_by(measure) %>%
+  summarize(frac_time = sum(value)/n()) %>%
+  ggplot(aes(y = frac_time, x = reorder(measure, frac_time)))+
+  geom_bar(stat = "identity") + 
+  xlab("Activitiy") +
+  ylab("Fraction of class") + 
+  coord_flip() +
+  theme_bw()
+```
+
+## Fractional amount of time spent on each category overall per class year
+
+```{r frac_time_per_class_per_year}
+gathered_values %>% 
+  group_by(year, measure) %>%
+  summarize(frac_time = sum(value)/n()) %>%
+  ggplot(aes(y = frac_time, x = reorder(measure, frac_time), group = year, color = year))+
+  geom_point() + 
+  geom_line() +
+  xlab("Activitiy") + 
+  # facet_wrap(~ year, nrow = 1) + 
+  coord_flip() +
+  theme_bw()
+```
+
+## Number of different instructor-semester pairings per per course
+
+```{r instructors_per_course}
+all_files_clean_marks[,c("course", "instructor", "semester")] %>%
+  unique() %>%
+  group_by(course) %>%
+  tally() %>%
+  ggplot(aes(reorder(course, n), n)) +
+    geom_bar(stat = "identity") +
+    xlab("Course ID") +
+    theme_bw()
+```
+
+## Fractional amount of time spent on each category for course `12`, `21`, and `11`, further granuarized by instructor
+
+The labels in each box represents the course id
+
+```{r time_spent_by_course_by_instructor, fig.width=10}
+gathered_values %>% 
+  filter(course == 21 | course == 12 | course == 11) %>%
+  group_by(course, instructor, measure) %>%
+  summarize(frac_time = sum(value)/n()) %>%
+  ggplot(aes(y = frac_time, x = reorder(measure, frac_time), color = instructor, group = instructor))+
+  geom_line() + 
+  xlab("Activitiy") + 
+  facet_wrap(~ course, nrow = 1) + 
+  coord_flip() +
+  theme_bw()
+```
+
+## Time spent on lecture vs student growth
+
+All courses - each dot is one course (separated by year level)
+
+```{r student_perf_vs_lecture_time}
+student_perf_vs_lecture_time <- all_files_clean_marks %>%
+  group_by(course, instructor, semester) %>%
+  summarize(
+    num_obs = n(),
+    num_lecture = sum(Instructor.Lecturing, na.rm = T),
+    student_performance = mean(EffectSize.StudentPerformance)
+  ) %>%
+  mutate(percent_time = num_lecture / num_obs, course_level = paste0("year", substr(course, start = 1, stop = 1)))
+
+student_perf_vs_lecture_time %>%
+  ggplot(aes(x = student_performance, y = percent_time)) +
+    facet_wrap(~ course_level) + 
+    geom_point() +
+    geom_smooth(method = "lm", se = F) +
+    ylab("Fraction of time spent on lecturing") +
+    xlab("Student performance effect size") +
+    theme_bw()
+```
+
+Looks like there's a positive correlation with lecture time and student performance in first year classes, and a negative correlation in second year classes
+
+# Question 1: Which activities (individually) has an effect on student performance?
+
+## Plot the variation of each measure for a single course and compare across instructors-semester pairings
+
+It really doesn't make sense to look across courses since different courses have different content = different methods of learning - scientific method: only vary one variable at a time.
+
+### Plot the variation of each measure for course 12 between instructors-semester pairings
+
+```{r variations_in_activities}
+course_of_interest = c(11, 12, 21)
+
+frac_class_time_per_instructor <- class_data_cleaned %>% 
+  gather(key = measure, value = value, -(course:year), -time) %>%
+  group_by(course, instructor, semester, measure) %>%
+  summarize(frac_time = sum(value)/n())
+
+ind_predictors_variability <- frac_class_time_per_instructor %>%
+  filter(course %in% course_of_interest) %>%
+  group_by(course, measure) %>%
+  summarize(mean_frac_time = mean(frac_time), sd_frac_time = sd(frac_time)) %>%
+  arrange(desc(sd_frac_time))
+
+ggplot(ind_predictors_variability, aes(x = reorder(measure, sd_frac_time), y = mean_frac_time)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = mean_frac_time - sd_frac_time, ymax = mean_frac_time + sd_frac_time)) +
+  coord_flip() +
+  facet_wrap(~ course) +
+  xlab("Fraction of class time spent\n(error bars represents standard deviation") +
+  theme_bw()
+```
+
+## Plot correlation between the top activities with the highest variations
+
+```{r correlate_variable_activities, width=10}
+ind_predictors_variability %>% 
+  arrange(desc(sd_frac_time)) %>% 
+  do(head(., 3)) %>% 
+  kable(format = "markdown")
+
+inner_join(
+  frac_class_time_per_instructor %>%
+    filter(course %in% course_of_interest), 
+  ind_predictors_variability %>% arrange(desc(sd_frac_time)) %>% do(head(., 5))
+  ) %>% inner_join(., class_perform) %>% 
+  ggplot(aes(EffectSize.StudentPerformance, frac_time)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  facet_grid(course ~ measure, scales = "free") +
+  theme_bw()
+```
+
+
+# Question 2: Which activities (individually) explains the largest variability in student performance across all courses?
+
+### Multiple linear regression
+
+#### Transform data for regression modelling
+
+```{r}
+# inner_join(frac_class_time_per_instructor, class_perform)
+summary_of_fract_time_spent <-  frac_class_time_per_instructor %>% spread(key = measure, value = frac_time) %>% inner_join(., class_perform)
+
+write.csv(x = summary_of_fract_time_spent, file = "summary_of_fract_time_spent.csv", quote = F, row.names = F)
+
+summary_of_fract_time_spent %>% head() %>% kable(format = "markdown")
+```
+
+#### Predicting student performance as a function of all our variables
+
+```{r}
+predicting_variables <- colnames(summary_of_fract_time_spent)[4:11]
+
+model <- glm(
+  formula = as.formula(paste("EffectSize.StudentPerformance ~ ",paste(predicting_variables, collapse= "+"))), 
+  data = summary_of_fract_time_spent %>% filter(course %in% course_of_interest)
+  )
+
+summary(model)
+```
+
+# Question 3 - which classes are arranged such that they have similar amounts of time spent on each activity?
+
+The more "red" the color, the more time that activity is spent on class
+
+```{r}
+cluster_data <- summary_of_fract_time_spent %>% ungroup() %>%
+  filter(course %in% course_of_interest) 
+
+cluster_matrix <- cluster_data %>%
+  select(-(course:semester), -EffectSize.StudentPerformance) %>% data.matrix()
+
+rownames(cluster_matrix) <- paste0(cluster_data$instructor,cluster_data$semester)
+
+cluster_matrix <- t(cluster_matrix)
+```
+
+```{r course_of_interest_only_clustering, fig.width=10, fig.height=8}
+annotation <- data.frame(EffectSize.StudentPerformance = cluster_data$EffectSize.StudentPerformance)
+rownames(annotation) <- paste0(cluster_data$instructor,cluster_data$semester)
+
+color_scale <- colorRampPalette(c("#ffeda0", "#feb24c", "#f03b20"))(100)
+
+pheatmap(mat = cluster_matrix, annotation_col = annotation, color = color_scale)
+```
+
+## What about across all courses?
+
+```{r}
+cluster_data <- summary_of_fract_time_spent %>% ungroup()
+
+cluster_matrix <- cluster_data %>%
+  select(-(course:semester), -EffectSize.StudentPerformance) %>% data.matrix()
+
+rownames(cluster_matrix) <- paste0(cluster_data$instructor,cluster_data$semester)
+
+cluster_matrix <- t(cluster_matrix)
+```
+
+```{r all_courses_clustering, fig.width=10, fig.height=8}
+annotation <- data.frame(EffectSize.StudentPerformance = cluster_data$EffectSize.StudentPerformance)
+rownames(annotation) <- paste0(cluster_data$instructor,cluster_data$semester,cluster_data$course)
+
+color_scale <- colorRampPalette(c("#ffeda0", "#feb24c", "#f03b20"))(100)
+
+pheatmap(mat = cluster_matrix, annotation_col = annotation, color = color_scale)
+```
+
