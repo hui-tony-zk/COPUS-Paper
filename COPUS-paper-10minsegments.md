@@ -18,13 +18,17 @@ opts_chunk$set(echo=F, fig.width = 12, fig.height = 8)
 
 
 
-## Chunking data
-
 
 
 ## Cluster ignoring time
 
 ### Cluster of all classes
+
+The x-axis labels represent course-instructor-semester pairings:
+
+Course 11, instructor A, semester 1 = 11-A-1
+
+Fractional time was calculated as a mean of all observations
 
 
 
