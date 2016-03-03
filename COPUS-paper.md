@@ -27,7 +27,7 @@ opts_chunk$set(echo=F)
 ## [1] "Number of Columns for all files: 31"
 ```
 
-Remove classes that are shorter than 43 minutes and longer than 51 minutes
+Remove classes that are shorter than 45 minutes and longer than 51 minutes
 
 
   x   freq
@@ -77,12 +77,12 @@ Notes from Megan: The 8 variables used in the Lund et al paper (and their short 
 
 | time|course |instructor |semester |observation |year | Student.AnsweringQuestion| Student.AskingQuestion| Instructor.AskingClickerQuestion| Instructor.GivingFeedback| Instructor.Lecturing| Instructor.WritingOnBoard| Instructor.MovingThroughGroup| Students.GroupWork|
 |----:|:------|:----------|:--------|:-----------|:----|-------------------------:|----------------------:|--------------------------------:|-------------------------:|--------------------:|-------------------------:|-----------------------------:|------------------:|
-|    2|11     |A          |1        |1           |1    |                         0|                      0|                                1|                         1|                    0|                         0|                             0|                  1|
-|    4|11     |A          |1        |1           |1    |                         0|                      0|                                0|                         0|                    0|                         0|                             0|                  1|
-|    6|11     |A          |1        |1           |1    |                         0|                      0|                                1|                         1|                    1|                         0|                             0|                  1|
-|    8|11     |A          |1        |1           |1    |                         0|                      0|                                1|                         1|                    0|                         0|                             0|                  1|
-|   10|11     |A          |1        |1           |1    |                         0|                      1|                                0|                         1|                    0|                         0|                             0|                  0|
-|   12|11     |A          |1        |1           |1    |                         0|                      0|                                0|                         1|                    0|                         0|                             0|                  1|
+|    2|11     |A          |1        |2           |1    |                         1|                      0|                                0|                         0|                    1|                         0|                             0|                  1|
+|    4|11     |A          |1        |2           |1    |                         0|                      1|                                0|                         1|                    1|                         0|                             0|                  0|
+|    6|11     |A          |1        |2           |1    |                         0|                      0|                                1|                         0|                    0|                         0|                             0|                  1|
+|    8|11     |A          |1        |2           |1    |                         0|                      0|                                1|                         0|                    1|                         0|                             0|                  0|
+|   10|11     |A          |1        |2           |1    |                         0|                      0|                                1|                         1|                    1|                         0|                             0|                  1|
+|   12|11     |A          |1        |2           |1    |                         0|                      0|                                1|                         1|                    0|                         0|                             0|                  1|
 
 ## Process the class performance data
 
@@ -117,7 +117,7 @@ Notes from Megan: The 8 variables used in the Lund et al paper (and their short 
 
 ![](COPUS-paper_files/figure-html/instructors_per_course-1.png)
 
-## Fractional amount of time spent on each category for course `12`, `21`, and `11`, further granuarized by instructor
+## Fractional amount of time spent on each category for course `12`, and `11`, further granuarized by instructor
 
 The labels in each box represents the course id
 
@@ -146,85 +146,24 @@ It really doesn't make sense to look across courses since different courses have
 
 |course |measure                          | mean_frac_time| sd_frac_time|
 |:------|:--------------------------------|--------------:|------------:|
-|11     |Instructor.GivingFeedback        |      0.3695967|    0.1952960|
-|11     |Instructor.Lecturing             |      0.6452251|    0.1506574|
-|11     |Students.GroupWork               |      0.4838322|    0.1345030|
-|12     |Instructor.WritingOnBoard        |      0.3272549|    0.2142247|
-|12     |Instructor.GivingFeedback        |      0.4915614|    0.1548330|
-|12     |Instructor.AskingClickerQuestion |      0.1565821|    0.1544680|
-|21     |Instructor.Lecturing             |      0.5679053|    0.1919070|
-|21     |Instructor.GivingFeedback        |      0.3833762|    0.1373068|
-|21     |Student.AnsweringQuestion        |      0.3404814|    0.1301166|
+|11     |Instructor.GivingFeedback        |      0.3015298|    0.2239104|
+|11     |Instructor.Lecturing             |      0.6415056|    0.2001084|
+|11     |Student.AnsweringQuestion        |      0.2083333|    0.1909407|
+|12     |Instructor.WritingOnBoard        |      0.3649902|    0.2586767|
+|12     |Instructor.AskingClickerQuestion |      0.1942466|    0.1904896|
+|12     |Instructor.GivingFeedback        |      0.4514269|    0.1698411|
 
 ```
 ## Joining by: c("course", "measure")
 ```
 
 ```
-## Joining by: c("course", "instructor", "semester")
+## Joining by: c("course", "instructor", "semester", "EffectSize.StudentPerformance")
 ```
 
 ![](COPUS-paper_files/figure-html/correlate_variable_activities-1.png)
 
 
-# Question 2: Which activities (individually) explains the largest variability in student performance across all courses?
-
-### Multiple linear regression
-
-#### Transform data for regression modelling
-
-
-```
-## Joining by: c("course", "instructor", "semester")
-```
-
-
-
-|course |instructor |semester | Instructor.AskingClickerQuestion| Instructor.GivingFeedback| Instructor.Lecturing| Instructor.MovingThroughGroup| Instructor.WritingOnBoard| Student.AnsweringQuestion| Student.AskingQuestion| Students.GroupWork| EffectSize.StudentPerformance|
-|:------|:----------|:--------|--------------------------------:|-------------------------:|--------------------:|-----------------------------:|-------------------------:|-------------------------:|----------------------:|------------------:|-----------------------------:|
-|11     |A          |1        |                        0.3191489|                 0.4893617|            0.5425532|                     0.1595745|                 0.0425532|                 0.2234043|              0.2021277|          0.5531915|                          2.91|
-|11     |B          |1        |                        0.3046875|                 0.1015625|            0.8671875|                     0.0625000|                 0.0000000|                 0.0390625|              0.0937500|          0.3046875|                          1.51|
-|11     |C          |1        |                        0.3508772|                 0.3508772|            0.5614035|                     0.1578947|                 0.0000000|                 0.2631579|              0.1578947|          0.6140351|                          2.65|
-|11     |D          |1        |                        0.3902439|                 0.5365854|            0.6097561|                     0.1707317|                 0.0243902|                 0.2682927|              0.2926829|          0.4634146|                          2.75|
-|12     |E          |2        |                        0.0759494|                 0.5822785|            0.3291139|                     0.2278481|                 0.3670886|                 0.3037975|              0.1645570|          0.2911392|                          1.36|
-|12     |F          |1        |                        0.0000000|                 0.4347826|            0.3913043|                     0.3043478|                 0.7391304|                 0.1739130|              0.0000000|          0.3913043|                          1.41|
-
-#### Predicting student performance as a function of all our variables
-
-
-```
-## 
-## Call:
-## glm(formula = as.formula(paste("EffectSize.StudentPerformance ~ ", 
-##     paste(predicting_variables, collapse = "+"))), data = summary_of_fract_time_spent %>% 
-##     filter(course %in% course_of_interest))
-## 
-## Deviance Residuals: 
-##      Min        1Q    Median        3Q       Max  
-## -0.83920  -0.26548  -0.03268   0.25759   0.69183  
-## 
-## Coefficients:
-##                                  Estimate Std. Error t value Pr(>|t|)  
-## (Intercept)                        0.2892     1.7392   0.166   0.8716  
-## Instructor.AskingClickerQuestion  -3.0389     1.9596  -1.551   0.1554  
-## Instructor.GivingFeedback         -0.9936     1.4141  -0.703   0.5000  
-## Instructor.Lecturing               0.1386     1.6344   0.085   0.9343  
-## Instructor.MovingThroughGroup     -1.3240     3.7018  -0.358   0.7288  
-## Instructor.WritingOnBoard          0.4811     1.0130   0.475   0.6461  
-## Student.AnsweringQuestion         -3.5912     2.0192  -1.779   0.1090  
-## Student.AskingQuestion             5.5225     2.6839   2.058   0.0697 .
-## Students.GroupWork                 6.3983     2.0347   3.145   0.0118 *
-## ---
-## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-## 
-## (Dispersion parameter for gaussian family taken to be 0.3048466)
-## 
-##     Null deviance: 8.7000  on 17  degrees of freedom
-## Residual deviance: 2.7436  on  9  degrees of freedom
-## AIC: 37.222
-## 
-## Number of Fisher Scoring iterations: 2
-```
 
 # Question 3 - which classes are arranged such that they have similar amounts of time spent on each activity?
 
@@ -237,6 +176,4 @@ The more "red" the color, the more time that activity is spent on class
 ## What about across all courses?
 
 
-
 ![](COPUS-paper_files/figure-html/all_courses_clustering-1.png)
-
