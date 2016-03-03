@@ -13,7 +13,8 @@ require(knitr)
 ```
 
 ```r
-opts_chunk$set(echo=F, fig.width = 12, fig.height = 8)
+opts_chunk$set(echo=F, fig.width = 10, fig.height = 7)
+cluster_method <- "complete"
 ```
 
 
@@ -53,3 +54,17 @@ Fractional time was calculated as a mean of all observations
 
 
 ![](COPUS-paper-10minsegments_files/figure-html/first_year_sliced_times_cluster-1.png)
+
+### first year and second year classes, sliced, clustered based on classes X chunk*metric
+
+
+
+![](COPUS-paper-10minsegments_files/figure-html/jr_sliced_times_cluter_rows-1.png)
+
+#### No clustering on columns
+
+![](COPUS-paper-10minsegments_files/figure-html/unnamed-chunk-9-1.png)
+
+#### No clustering on rows
+
+![](COPUS-paper-10minsegments_files/figure-html/unnamed-chunk-10-1.png)
