@@ -68,18 +68,41 @@ From first and second year classes
 
 ![](COPUS-paper-10minsegments_files/figure-html/unnamed-chunk-11-1.png)
 
+**Cluster one** on the right, **cluster two** on the left
+
+
 ```
 ## Joining by: "id"
 ```
 
-![](COPUS-paper-10minsegments_files/figure-html/unnamed-chunk-12-1.png)
+See which "features" are significantly different between the two clusters
+
+
+|measure                              |  pval|   fdr|
+|:------------------------------------|-----:|-----:|
+|Instructor.Lecturing-chunk3          | 0.000| 0.000|
+|Instructor.WritingOnBoard-chunk5     | 0.003| 0.117|
+|Instructor.Lecturing-chunk4          | 0.009| 0.342|
+|Instructor.Lecturing-chunk5          | 0.009| 0.342|
+|Instructor.GivingFeedback-chunk3     | 0.019| 0.684|
+|Instructor.WritingOnBoard-chunk3     | 0.022| 0.770|
+|Instructor.WritingOnBoard-chunk2     | 0.024| 0.816|
+|Instructor.WritingOnBoard-chunk4     | 0.030| 0.990|
+|Students.GroupWork-chunk3            | 0.035| 1.000|
+|Instructor.MovingThroughGroup-chunk1 | 0.036| 1.000|
+
+Visualize the chunks with pvalue < 0.05
+
+![](COPUS-paper-10minsegments_files/figure-html/unnamed-chunk-14-1.png)
 
 ## Heatmap over time for the two clusters
 
+Average the of all classes that fall within cluster 1 or 2 and plot over time.
+
 
 ```
 ## Joining by: "id"
 ```
 
-![](COPUS-paper-10minsegments_files/figure-html/unnamed-chunk-13-1.png)![](COPUS-paper-10minsegments_files/figure-html/unnamed-chunk-13-2.png)
+![](COPUS-paper-10minsegments_files/figure-html/unnamed-chunk-15-1.png)
 
