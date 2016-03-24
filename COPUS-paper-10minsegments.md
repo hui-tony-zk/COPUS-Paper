@@ -4,20 +4,9 @@ Tony Hui
 # Processing the data
 
 
-```r
-require(knitr)
-```
-
 ```
 ## Loading required package: knitr
 ```
-
-```r
-opts_chunk$set(echo=F, fig.width = 10, fig.height = 7)
-cluster_method <- "complete"
-```
-
-
 
 
 
@@ -63,8 +52,34 @@ Fractional time was calculated as a mean of all observations
 
 #### No clustering on columns
 
-![](COPUS-paper-10minsegments_files/figure-html/unnamed-chunk-9-1.png)
+![](COPUS-paper-10minsegments_files/figure-html/unnamed-chunk-8-1.png)
 
 #### No clustering on rows
 
+![](COPUS-paper-10minsegments_files/figure-html/unnamed-chunk-9-1.png)
+
+### first year only
+
 ![](COPUS-paper-10minsegments_files/figure-html/unnamed-chunk-10-1.png)
+
+## Rule association mining
+
+From first and second year classes
+
+![](COPUS-paper-10minsegments_files/figure-html/unnamed-chunk-11-1.png)
+
+```
+## Joining by: "id"
+```
+
+![](COPUS-paper-10minsegments_files/figure-html/unnamed-chunk-12-1.png)
+
+## Heatmap over time for the two clusters
+
+
+```
+## Joining by: "id"
+```
+
+![](COPUS-paper-10minsegments_files/figure-html/unnamed-chunk-13-1.png)![](COPUS-paper-10minsegments_files/figure-html/unnamed-chunk-13-2.png)
+
