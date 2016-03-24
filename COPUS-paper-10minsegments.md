@@ -44,6 +44,8 @@ Fractional time was calculated as a mean of all observations
 
 ![](COPUS-paper-10minsegments_files/figure-html/first_year_sliced_times_cluster-1.png)
 
+## Cluster within classes using different chunks as features
+
 ### first year and second year classes, sliced, clustered based on classes X chunk*metric
 
 
