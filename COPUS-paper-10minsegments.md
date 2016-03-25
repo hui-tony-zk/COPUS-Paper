@@ -66,9 +66,20 @@ Fractional time was calculated as a mean of all observations
 
 ## 5 Rule association mining
 
-From first year classes only
+From first year classes only.
 
 
+|course |instructor | year| EffectSize.StudentPerformance|id     | cluster|
+|:------|:----------|----:|-----------------------------:|:------|-------:|
+|12     |K          |    1|                          0.83|12-K-2 |       0|
+|12     |H          |    1|                          1.05|12-H-2 |       0|
+|12     |Y          |    1|                          1.40|12-Y-1 |       0|
+|12     |F          |    1|                          1.41|12-F-1 |       0|
+|11     |B          |    1|                          1.51|11-B-1 |       0|
+|12     |I          |    1|                          1.55|12-I-2 |       1|
+|12     |G          |    1|                          1.77|12-G-2 |       1|
+|11     |C          |    1|                          2.65|11-C-1 |       1|
+|11     |A          |    1|                          2.91|11-A-1 |       1|
 
 
 ```
