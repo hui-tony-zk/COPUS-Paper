@@ -1,7 +1,7 @@
 # COPUS Analysis for publication
 Tony Hui  
 
-# Processing the data
+## 1 Processing the data
 
 
 ```
@@ -10,9 +10,9 @@ Tony Hui
 
 
 
-## Cluster ignoring time
+## 2 Cluster ignoring time
 
-### Cluster of all classes
+### 2.1 Cluster of all classes
 
 The x-axis labels represent course-instructor-semester pairings:
 
@@ -24,53 +24,51 @@ Fractional time was calculated as a mean of all observations
 
 ![](COPUS-paper-10minsegments_files/figure-html/all_years_all_times_cluster-1.png)
 
-### Cluster of first-year classes
+### 2.2 Cluster of first-year classes
 
 
 
 ![](COPUS-paper-10minsegments_files/figure-html/first_year_all_times_cluster-1.png)
 
-## Cluster, slicing time into 10-minute intervals
+## 3 Cluster, slicing time into 10-minute intervals
 
-### All classes, sliced, clustered
+### 3.1 All classes, sliced, clustered
 
 
 
 ![](COPUS-paper-10minsegments_files/figure-html/all_years_sliced_times_cluster-1.png)
 
-### first year classes, sliced, clustered
+### 3.2 first year classes, sliced, clustered
 
 
 
 ![](COPUS-paper-10minsegments_files/figure-html/first_year_sliced_times_cluster-1.png)
 
-## Cluster within classes using different chunks as features
+## 4 Cluster within classes using different chunks as features
 
-### first year and second year classes, sliced, clustered based on classes X chunk*metric
+### 4.1 first year and second year classes, sliced, clustered based on classes X chunk*metric
 
 
 
 ![](COPUS-paper-10minsegments_files/figure-html/jr_sliced_times_cluter_rows-1.png)
 
-#### No clustering on columns
+### 4.2 No clustering on columns
 
 ![](COPUS-paper-10minsegments_files/figure-html/unnamed-chunk-8-1.png)
 
-#### No clustering on rows
+### 4.3 No clustering on rows
 
 ![](COPUS-paper-10minsegments_files/figure-html/unnamed-chunk-9-1.png)
 
-### first year only
+### 4.4 first year only
 
 ![](COPUS-paper-10minsegments_files/figure-html/unnamed-chunk-10-1.png)
 
-## Rule association mining
+## 5 Rule association mining
 
-From first and second year classes
+From first year classes only
 
-![](COPUS-paper-10minsegments_files/figure-html/unnamed-chunk-11-1.png)
 
-**Cluster one** on the right, **cluster two** on the left
 
 
 ```
@@ -80,20 +78,16 @@ From first and second year classes
 See which "features" are significantly different between the two clusters
 
 
-|measure                              |  pval|   fdr|
-|:------------------------------------|-----:|-----:|
-|Instructor.Lecturing-chunk3          | 0.000| 0.000|
-|Instructor.WritingOnBoard-chunk5     | 0.003| 0.117|
-|Instructor.Lecturing-chunk4          | 0.009| 0.342|
-|Instructor.Lecturing-chunk5          | 0.009| 0.342|
-|Instructor.GivingFeedback-chunk3     | 0.019| 0.684|
-|Instructor.WritingOnBoard-chunk3     | 0.022| 0.770|
-|Instructor.WritingOnBoard-chunk2     | 0.024| 0.816|
-|Instructor.WritingOnBoard-chunk4     | 0.030| 0.990|
-|Students.GroupWork-chunk3            | 0.035| 1.000|
-|Instructor.MovingThroughGroup-chunk1 | 0.036| 1.000|
+|measure                                 |  pval|  fdr|
+|:---------------------------------------|-----:|----:|
+|Students.GroupWork-chunk4               | 0.018| 0.72|
+|Instructor.GivingFeedback-chunk5        | 0.062| 1.00|
+|Instructor.MovingThroughGroup-chunk2    | 0.077| 1.00|
+|Instructor.Lecturing-chunk1             | 0.105| 1.00|
+|Instructor.MovingThroughGroup-chunk4    | 0.132| 1.00|
+|Instructor.AskingClickerQuestion-chunk4 | 0.144| 1.00|
 
-Visualize the chunks with pvalue < 0.05
+Visualize the chunks with pvalue < 0.1
 
 ![](COPUS-paper-10minsegments_files/figure-html/unnamed-chunk-14-1.png)
 
