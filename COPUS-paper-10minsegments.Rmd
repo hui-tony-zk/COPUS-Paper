@@ -439,8 +439,8 @@ jr_class_heatmap_over_time_matrix %>%
            cluster_cols = FALSE,
            cluster_rows = FALSE,
            # main = "Heatmap over time for cluster 1",
-           clustering_method = cluster_method,
-           # scale = "row",
-           color = color_scale)
+           # scale = "column",
+           color = color_scale,
+           clustering_method = cluster_method)
 ```
 
