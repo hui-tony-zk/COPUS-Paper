@@ -1,0 +1,445 @@
+---
+title: "COPUS Analysis for publication"
+author: "Tony Hui"
+output: 
+  html_document: 
+    keep_md: yes
+    self_contained: yes
+    toc: yes
+---
+
+## 1 Processing the data
+
+```{r, echo=F, messages=FALSE}
+require(knitr)
+opts_chunk$set(echo=F, fig.width = 10, fig.height = 7)
+cluster_method <- "ward.D2"
+
+suppressPackageStartupMessages(require(ggplot2))
+suppressPackageStartupMessages(require(dplyr))
+suppressPackageStartupMessages(require(stringr))
+suppressPackageStartupMessages(require(tidyr))
+suppressPackageStartupMessages(require(data.table))
+suppressPackageStartupMessages(require(pheatmap))
+```
+
+```{r}
+all_classes <- read.csv(file = "all_observations_cleaned.csv") %>% tbl_df()
+
+chunks <- lapply(1:5, function(x) rep(x, 5)) %>% unlist() %>% c(., 5)
+
+all_classes <- all_classes %>%
+  group_by(course, instructor, semester, observation, year) %>%
+  mutate(chunk = chunks[1:n()])
+```
+
+## 2 Cluster ignoring time
+
+### 2.1 Cluster of all classes
+
+The x-axis labels represent course-instructor-semester pairings:
+
+Course 11, instructor A, semester 1 = 11-A-1
+
+Fractional time was calculated as a mean of all observations
+
+```{r}
+all_total_classes <- all_classes %>%
+  ungroup() %>%
+  select(-chunk, -EffectSize.StudentPerformance, -year) %>%
+  gather(key = measure, value = value, -(course:observation), -time, na.rm = T) %>%
+  group_by(course, instructor, semester, measure) %>%
+  summarize(frac = sum(value)/n()) 
+
+all_total_classes_matrix <- all_total_classes %>%
+  mutate(id = paste(course, instructor,semester, sep = "-")) %>%
+  ungroup() %>%
+  select(-course, -instructor, -semester) %>%
+  spread(key = measure, value = frac)
+```
+
+```{r all_years_all_times_cluster}
+cluster_matrix <- all_total_classes_matrix %>% select(-id) %>% data.matrix()
+
+rownames(cluster_matrix) <- all_total_classes_matrix$id
+
+annotation <- data.frame(Student_perf = all_classes$EffectSize.StudentPerformance %>% unique)
+
+rownames(annotation) <- all_total_classes_matrix$id
+
+color_scale <- colorRampPalette(c("#ffeda0", "#feb24c", "#f03b20"))(5)
+color_diverging <- colorRampPalette(c("#d7191c", "#ffffbf", "#2b83ba"))(5)
+
+ann_colors = list(
+    Student_perf = colorRampPalette(c("#edf8fb", "#006d2c"))(5)
+)
+
+pheatmap(mat = t(cluster_matrix), 
+         clustering_method = cluster_method,
+         annotation_col = annotation,
+         annotation_colors = ann_colors,
+         # scale = "row",
+         color = color_scale)
+```
+
+### 2.2 Cluster of first-year classes
+
+```{r}
+course_of_interest <- c(11,12)
+first_year_classes_matrix <- all_total_classes %>%
+  filter(course %in% course_of_interest) %>%
+  mutate(id = paste(course, instructor,semester, sep = "-")) %>%
+  ungroup() %>%
+  select(-course, -instructor, -semester) %>%
+  spread(key = measure, value = frac)
+```
+
+```{r first_year_all_times_cluster}
+matrix <- first_year_classes_matrix
+
+cluster_matrix <- matrix %>% select(-id) %>% data.matrix()
+
+rownames(cluster_matrix) <- matrix$id
+
+annotation <- data.frame(Student_perf = filter(all_classes, course %in% course_of_interest)$EffectSize.StudentPerformance %>% unique)
+
+rownames(annotation) <- matrix$id
+
+ann_colors = list(
+    Student_perf = colorRampPalette(c("#edf8fb", "#006d2c"))(5)
+)
+
+pheatmap(mat = t(cluster_matrix), 
+         clustering_method = cluster_method,
+         annotation_col = annotation,
+         annotation_colors = ann_colors,
+         # scale = "row",
+         color = color_scale)
+```
+
+## 3 Cluster, slicing time into 10-minute intervals
+
+### 3.1 All classes, sliced, clustered
+
+```{r}
+all_total_classes_sliced <- all_classes %>%
+  ungroup() %>%
+  select(-EffectSize.StudentPerformance, -year) %>%
+  gather(key = measure, value = value, -(course:observation), -time, -chunk, na.rm = T) %>%
+  group_by(course, instructor, semester, measure, chunk) %>%
+  summarize(frac = sum(value)/n()) 
+
+all_total_classes_sliced_matrix <- all_total_classes_sliced %>%
+  mutate(id = paste(course, instructor, semester, paste0("chunk",chunk), sep = "-")) %>%
+  ungroup() %>%
+  select(-course, -instructor, -semester, -chunk) %>%
+  spread(key = measure, value = frac)
+```
+
+```{r all_years_sliced_times_cluster}
+matrix <- all_total_classes_sliced_matrix
+
+cluster_matrix <- matrix %>% select(-id) %>% data.matrix()
+
+rownames(cluster_matrix) <- matrix$id
+
+annotation_raw <- all_classes %>% ungroup %>% select(course, instructor, semester, year, chunk, EffectSize.StudentPerformance) %>% 
+  mutate(semester = factor(semester),
+         course = factor(course),
+         year = factor(year)) %>% 
+  select(-semester, -year) %>%
+  unique() %>% as.data.frame()
+
+rownames(annotation_raw) <- matrix$id
+
+# ann_colors = list(
+#     Student_perf = colorRampPalette(c("#edf8fb", "#006d2c"))(5)
+# )
+
+pheatmap(mat = t(cluster_matrix), 
+         clustering_method = cluster_method,
+         annotation_col = annotation_raw,
+         # annotation_colors = ann_colors,
+         # scale = "row",
+         color = color_scale)
+```
+
+### 3.2 first year classes, sliced, clustered
+
+```{r}
+first_year_classes_sliced <- all_classes %>%
+  filter(course %in% course_of_interest) %>%
+  ungroup() %>%
+  select(-EffectSize.StudentPerformance, -year) %>%
+  gather(key = measure, value = value, -(course:observation), -time, -chunk, na.rm = T) %>%
+  group_by(course, instructor, semester, measure, chunk) %>%
+  summarize(frac = sum(value)/n()) 
+
+first_year_classes_sliced_matrix <- first_year_classes_sliced %>%
+  mutate(id = paste(course, instructor, semester, paste0("chunk",chunk), sep = "-")) %>%
+  ungroup() %>%
+  select(-course, -instructor, -semester, -chunk) %>%
+  spread(key = measure, value = frac)
+```
+
+```{r first_year_sliced_times_cluster}
+matrix <- first_year_classes_sliced_matrix
+
+cluster_matrix <- matrix %>% select(-id) %>% data.matrix()
+
+rownames(cluster_matrix) <- matrix$id
+
+annotation_raw <- all_classes %>% ungroup %>% select(course, instructor, semester, year, chunk, EffectSize.StudentPerformance) %>% 
+  filter(course %in% course_of_interest) %>%
+  mutate(semester = factor(semester),
+         course = factor(course)) %>% 
+  select(-semester, -year) %>%
+  unique() %>% as.data.frame()
+
+rownames(annotation_raw) <- matrix$id
+
+ann_colors = list(
+    Student_perf = colorRampPalette(c("#edf8fb", "#006d2c"))(5)
+)
+
+pheatmap(mat = t(cluster_matrix), 
+         clustering_method = cluster_method,
+         annotation_col = annotation_raw,
+         annotation_colors = ann_colors,
+         # scale = "row",
+         color = color_scale)
+```
+
+## 4 Cluster within classes using different chunks as features
+
+### 4.1 first year and second year classes, sliced, clustered based on classes X chunk*metric
+
+```{r}
+jr_class <- unique(all_classes$course)[1:5]
+
+jr_classes_sliced <- all_classes %>%
+  filter(course %in% jr_class) %>%
+  ungroup() %>%
+  select(-EffectSize.StudentPerformance, -year) %>%
+  gather(key = measure, value = value, -(course:observation), -time, -chunk, na.rm = T) %>%
+  group_by(course, instructor, semester, measure, chunk) %>%
+  summarize(frac = sum(value)/n()) 
+
+jr_classes_sliced_matrix_long <- jr_classes_sliced %>%
+  ungroup() %>%
+  mutate(id = paste(course, instructor, semester, sep = "-"),
+         measure = paste(measure, paste0("chunk",chunk), sep = "-")) %>%
+  select(-course, -instructor, -semester, -chunk) %>%
+  spread(key = measure, value = frac)
+```
+
+```{r jr_sliced_times_cluter_rows}
+matrix <- jr_classes_sliced_matrix_long
+
+cluster_matrix <- matrix %>% select(-id) %>% data.matrix()
+
+rownames(cluster_matrix) <- matrix$id
+
+annotation_raw <- all_classes %>% ungroup %>% select(course, instructor, semester, year, EffectSize.StudentPerformance) %>% 
+  filter(course %in% jr_class) %>%
+  mutate(semester = factor(semester),
+         course = factor(course)) %>% 
+  select(-semester) %>%
+  unique() %>% as.data.frame()
+
+rownames(annotation_raw) <- matrix$id
+
+annotation_raw_order <- annotation_raw[order(annotation_raw$EffectSize.StudentPerformance),]
+
+ann_colors = list(
+    Student_perf = colorRampPalette(c("#edf8fb", "#006d2c"))(5)
+)
+
+cluster_matrix <- cluster_matrix[rownames(annotation_raw_order),]
+
+jr_class_results <- pheatmap(mat = t(cluster_matrix), 
+         clustering_method = cluster_method,
+         cluster_cols = TRUE,
+         cluster_rows = TRUE,
+         annotation_col = annotation_raw,
+         annotation_colors = ann_colors,
+         # scale = "row",
+         color = color_scale)
+```
+
+### 4.2 No clustering on columns
+
+```{r}
+pheatmap(mat = t(cluster_matrix), 
+         clustering_method = cluster_method,
+         cluster_cols = FALSE,
+         # cluster_rows = FALSE,
+         annotation_col = annotation_raw,
+         annotation_colors = ann_colors,
+         # scale = "row",
+         color = color_scale)
+```
+
+### 4.3 No clustering on rows
+
+```{r}
+pheatmap(mat = t(cluster_matrix), 
+         clustering_method = cluster_method,
+         cluster_cols = TRUE,
+         cluster_rows = FALSE,
+         annotation_col = annotation_raw,
+         annotation_colors = ann_colors,
+         # scale = "row",
+         color = color_scale)
+```
+
+### 4.4 first year only
+
+```{r}
+first_yr_class <- unique(all_classes$course)[1:2]
+
+first_yr_classes_sliced <- all_classes %>%
+  filter(course %in% first_yr_class) %>%
+  ungroup() %>%
+  select(-EffectSize.StudentPerformance, -year) %>%
+  gather(key = measure, value = value, -(course:observation), -time, -chunk, na.rm = T) %>%
+  group_by(course, instructor, semester, measure, chunk) %>%
+  summarize(frac = sum(value)/n()) 
+
+first_yr_classes_sliced_matrix_long <- first_yr_classes_sliced %>%
+  ungroup() %>%
+  mutate(id = paste(course, instructor, semester, sep = "-"),
+         measure = paste(measure, paste0("chunk",chunk), sep = "-")) %>%
+  select(-course, -instructor, -semester, -chunk) %>%
+  spread(key = measure, value = frac)
+
+matrix <- first_yr_classes_sliced_matrix_long
+
+cluster_matrix <- matrix %>% select(-id) %>% data.matrix()
+
+rownames(cluster_matrix) <- matrix$id
+
+annotation_raw <- all_classes %>% ungroup %>% select(course, instructor, semester, year, EffectSize.StudentPerformance) %>% 
+  filter(course %in% first_yr_class) %>%
+  mutate(semester = factor(semester),
+         course = factor(course)) %>% 
+  select(-semester) %>%
+  unique() %>% as.data.frame()
+
+rownames(annotation_raw) <- matrix$id
+
+annotation_raw_order <- annotation_raw[order(annotation_raw$EffectSize.StudentPerformance),]
+
+ann_colors = list(
+    Student_perf = colorRampPalette(c("#edf8fb", "#006d2c"))(5)
+)
+
+cluster_matrix <- cluster_matrix[rownames(annotation_raw_order),]
+
+first_yr_class_results <- pheatmap(mat = t(cluster_matrix), 
+         clustering_method = cluster_method,
+         cluster_cols = TRUE,
+         cluster_rows = TRUE,
+         annotation_col = annotation_raw,
+         annotation_colors = ann_colors,
+         # scale = "row",
+         color = color_scale)
+```
+
+## 5 Rule association mining
+
+From first year classes only.
+
+```{r}
+annotation_raw <- all_classes %>% ungroup %>% select(course, instructor, semester, year, EffectSize.StudentPerformance) %>% 
+  # filter(course %in% jr_class) %>%
+  filter(course %in% first_yr_class) %>%
+  mutate(semester = factor(semester),
+         course = factor(course),
+         id = paste(course, instructor, semester, sep = "-")) %>% 
+  select(-semester) %>%
+  unique() %>% as.data.frame()
+
+cutoff <- quantile(annotation_raw$EffectSize.StudentPerformance)
+annotation_raw_groups <- annotation_raw %>%
+  mutate(cluster = as.numeric(EffectSize.StudentPerformance > cutoff[3])) %>%
+  select(id, cluster)
+
+annotation_raw %>%
+  arrange(EffectSize.StudentPerformance) %>%
+  mutate(cluster = as.numeric(EffectSize.StudentPerformance > cutoff[3])) %>% 
+  kable("markdown")
+```
+
+```{r, fig.width=5, fig.height=8, dpi=150}
+jr_class_association_mining <- first_yr_classes_sliced %>%
+  ungroup() %>%
+  mutate(id = paste(course, instructor, semester, sep = "-"),
+         measure = paste(measure, paste0("chunk",chunk), sep = "-")) %>%
+  select(-course, -instructor, -semester, -chunk) %>%
+  left_join(., annotation_raw_groups)
+  # spread(key = measure, value = frac)
+```
+
+See which "features" are significantly different between the two clusters
+
+```{r}
+jr_class_association_mining_pval <- jr_class_association_mining %>%
+  group_by(measure) %>%
+  arrange(measure) %>%
+  summarize(pval = t.test(x = frac[cluster == 0], y= frac[cluster == 1])$p.value %>% round(3)) %>%
+  arrange(pval) %>%
+  mutate(fdr = p.adjust(pval))
+
+jr_class_association_mining_pval %>% head %>% kable("markdown")
+
+measures <- jr_class_association_mining_pval %>% filter(pval < 0.1) %>% .$measure
+```
+
+Visualize the chunks with pvalue < 0.1
+
+```{r}
+jr_class_association_mining %>%
+  filter(measure %in% measures) %>%
+  ggplot(aes(factor(cluster), frac)) +
+  geom_boxplot() +
+  facet_wrap(~measure, scale = "free_y", ncol=2)
+```
+
+## Heatmap over time for the two clusters
+
+Average the of all classes that fall within cluster 1 or 2 and plot over time.
+
+```{r}
+# jr_class_heatmap_over_time <- jr_classes_sliced %>%
+jr_class_heatmap_over_time <- first_yr_classes_sliced %>%
+  ungroup() %>%
+  mutate(id = paste(course, instructor, semester, sep = "-")) %>%
+  select(-course, -instructor, -semester) %>%
+  left_join(., annotation_raw_groups) %>%
+  group_by(cluster, measure, chunk) %>%
+  summarize(frac = mean(frac)) %>%
+  ungroup() %>%
+  mutate(measure = paste(cluster, measure, sep = "_"))
+
+jr_class_heatmap_over_time_matrix <- jr_class_heatmap_over_time %>%
+  select(-cluster) %>%
+  spread(key = measure, value = frac) %>%
+  select(-chunk) %>%
+  ungroup() %>%
+  data.matrix()
+
+rownames(jr_class_heatmap_over_time_matrix) <- rep(c(1:5), 1)
+
+jr_class_heatmap_over_time_matrix %>%
+  # head(5) %>%
+  t() %>%
+  pheatmap(gaps_row = 8,
+           cluster_cols = FALSE,
+           cluster_rows = FALSE,
+           # main = "Heatmap over time for cluster 1",
+           clustering_method = cluster_method,
+           # scale = "row",
+           color = color_scale)
+```
+
