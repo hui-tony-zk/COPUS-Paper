@@ -8,6 +8,22 @@ Tony Hui
 ## Loading required package: knitr
 ```
 
+```
+## Warning: package 'knitr' was built under R version 3.2.3
+```
+
+```
+## Warning: package 'ggplot2' was built under R version 3.2.4
+```
+
+```
+## Warning: package 'tidyr' was built under R version 3.2.3
+```
+
+```
+## Warning: package 'pheatmap' was built under R version 3.2.3
+```
+
 
 
 ## 2 Cluster ignoring time
@@ -66,7 +82,14 @@ Fractional time was calculated as a mean of all observations
 
 ## 5 Rule association mining
 
-From first year classes only.
+From first year classes only. Split classes into two groups using EffectSize - group (or cluster) 1 for classes with effect size above the median, and cluster 0 for classes with effect size below the median
+
+
+```
+##   0%  25%  50%  75% 100% 
+## 0.83 1.40 1.51 1.77 2.91
+```
+
 
 
 |course |instructor | year| EffectSize.StudentPerformance|id     | cluster|

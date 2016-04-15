@@ -348,7 +348,7 @@ first_yr_class_results <- pheatmap(mat = t(cluster_matrix),
 
 ## 5 Rule association mining
 
-From first year classes only.
+From first year classes only. Split classes into two groups using EffectSize - group (or cluster) 1 for classes with effect size above the median, and cluster 0 for classes with effect size below the median
 
 ```{r}
 annotation_raw <- all_classes %>% ungroup %>% select(course, instructor, semester, year, EffectSize.StudentPerformance) %>% 
@@ -364,6 +364,7 @@ cutoff <- quantile(annotation_raw$EffectSize.StudentPerformance)
 annotation_raw_groups <- annotation_raw %>%
   mutate(cluster = as.numeric(EffectSize.StudentPerformance > cutoff[3])) %>%
   select(id, cluster)
+cutoff
 
 annotation_raw %>%
   arrange(EffectSize.StudentPerformance) %>%
